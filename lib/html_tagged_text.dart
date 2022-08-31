@@ -21,6 +21,9 @@ import 'package:xml/xml.dart';
 /// Builds a [TextSpan] with the provided [text].
 typedef TextSpanBuilder = TextSpan? Function(String text);
 
+/// Builds an [InlineSpan] with the provided [text].
+typedef InlineSpanBuilder = InlineSpan? Function(String text);
+
 /// Called with the [href] of an anchor tag.
 typedef LinkCallback = void Function(String href);
 
@@ -39,7 +42,7 @@ class TaggedText extends StatefulWidget {
   /// The tagged content to render.
   final String content;
 
-  /// A map of [TextSpanBuilder]s by lower-case HTML tag name. Tag names must be
+  /// A map of [InlineSpanBuilder]s by lower-case HTML tag name. Tag names must be
   /// lower-case.
   ///
   /// This is used to determine how to render each tag that is found in
@@ -47,7 +50,7 @@ class TaggedText extends StatefulWidget {
   ///
   /// If a tag is missing, a warning will be printed and the text will be
   /// rendered in the default [style].
-  final Map<String, TextSpanBuilder> tagToTextSpanBuilder;
+  final Map<String, InlineSpanBuilder> tagToTextSpanBuilder;
 
   /// Default style to use for all spans of text.
   final TextStyle? style;
@@ -118,7 +121,7 @@ class TaggedText extends StatefulWidget {
   TaggedText({
     Key? key,
     required this.content,
-    this.tagToTextSpanBuilder = const <String, TextSpanBuilder>{},
+    this.tagToTextSpanBuilder = const <String, InlineSpanBuilder>{},
     this.style,
     this.linkStyle,
     this.textAlign = TextAlign.start,

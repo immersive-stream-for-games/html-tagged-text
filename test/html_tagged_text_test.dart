@@ -89,6 +89,33 @@ void main() {
       ]);
     });
 
+    testWidgets('with InlineSpans', (tester) async {
+      const redactedText = const Text('REDACTED');
+
+      final widget = TaggedText(
+        content: '<greeting>Hello</greeting>, my name is <name>George</name>!',
+        tagToTextSpanBuilder: {
+          'greeting': (text) => TextSpan(text: text, style: greetingStyle),
+          'name': (text) => WidgetSpan(child: redactedText),
+        },
+      );
+
+      await tester.pumpWidget(wrap(widget));
+
+      final richTextFinder = find.byType(RichText);
+      expect(richTextFinder, findsNWidgets(2));
+      final richText = tester.firstWidget(richTextFinder) as RichText;
+
+      final textSpan = getTextSpan(richText);
+      expect(textSpan.text, isNull);
+      expect(textSpan.children, [
+        TextSpan(text: 'Hello', style: greetingStyle),
+        TextSpan(text: ', my name is '),
+        WidgetSpan(child: redactedText),
+        TextSpan(text: '!'),
+      ]);
+    });
+
     testWidgets('content tags are case insensitive', (tester) async {
       final widget = TaggedText(
         content: '<GREEting>Hello</GREEting>, my name is <nAme>George</nAme>!',
@@ -318,7 +345,7 @@ void main() {
 
       final content = 'Hello, <name>Bob</name>';
       final tagToTextSpanBuilder = <String, TextSpanBuilder>{
-        // TODO(b/76019124) Eliminate this wrapper when the Dart 2 FE
+        // TODO Eliminate this wrapper when the Dart 2 FE
         // supports mocking and tearoffs.
         'name': (x) => mockTextSpanBuilder(x),
       };

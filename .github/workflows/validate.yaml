@@ -1,0 +1,23 @@
+name: validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      # TODO fix flutter analyze.
+      # See https://github.com/immersive-stream-for-games/html-tagged-text/runs/8126639392?check_suite_focus=true
+      # - run: flutter analyze
+      - run: flutter test

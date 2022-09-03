@@ -249,7 +249,7 @@ class _TaggedTextState extends State<TaggedText> {
 
             assert(node.tags.isEmpty, 'Tags should not be placed within tags.');
 
-            final tagName = node.localName.toLowerCase();
+            final tagName = node.localNameLowerCase;
             final textSpanBuilder = widget.tagToTextSpanBuilder[tagName];
             final defaultTextSpanBuilder =
                 widget.defaultTextSpanBuilders[tagName];
@@ -332,7 +332,7 @@ class _FocusableLinkState extends State<_FocusableLink> {
 }
 
 extension _NameHelper on XmlElement {
-  String get localName => name.local.toLowerCase();
+  String get localNameLowerCase => name.local.toLowerCase();
   Iterable<XmlElement> get tags => children.whereType<XmlElement>();
 }
 

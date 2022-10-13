@@ -101,6 +101,11 @@ class TaggedText extends StatefulWidget {
   /// See [RichText.maxLines].
   final int? maxLines;
 
+  /// An alternative semantics label for this [TaggedText].
+  ///
+  /// This is passed through directly to [TextSpan.semanticsLabel].
+  final String? semanticsLabel;
+
   /// A callback to fire when a user taps an anchor tag.
   ///
   /// Will only be fired when the tag is tapped if the href can be parsed from
@@ -131,6 +136,7 @@ class TaggedText extends StatefulWidget {
     this.overflow = TextOverflow.clip,
     this.textScaleFactor,
     this.maxLines,
+    this.semanticsLabel,
     this.onTapLink,
     this.focusableLinks = false,
   })  : assert(
@@ -203,7 +209,11 @@ class _TaggedTextState extends State<TaggedText> {
 
     return widget.selectableText
         ? SelectableText.rich(
-            TextSpan(children: _textSpans, style: widget.style),
+            TextSpan(
+              children: _textSpans,
+              style: widget.style,
+              semanticsLabel: widget.semanticsLabel,
+            ),
             textAlign: widget.textAlign,
             textDirection: widget.textDirection,
             textScaleFactor: widget.textScaleFactor ??
@@ -212,7 +222,11 @@ class _TaggedTextState extends State<TaggedText> {
             maxLines: widget.maxLines,
           )
         : RichText(
-            text: TextSpan(children: _textSpans, style: widget.style),
+            text: TextSpan(
+              children: _textSpans,
+              style: widget.style,
+              semanticsLabel: widget.semanticsLabel,
+            ),
             textAlign: widget.textAlign,
             textDirection: widget.textDirection,
             softWrap: widget.softWrap,

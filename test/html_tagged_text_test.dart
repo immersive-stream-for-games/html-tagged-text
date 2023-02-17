@@ -547,6 +547,32 @@ void main() {
       expect(richText.textScaleFactor, equals(expectedTextScaleFactor));
     });
 
+    testWidgets(
+      'uses DefaultTextStyle when available',
+      (tester) async {
+        final widget = TaggedText(
+          content: '<greeting>Hello</greeting>',
+          tagToTextSpanBuilder: {
+            'greeting': (text) => TextSpan(text: text, style: greetingStyle),
+          },
+          // Style not specified!
+        );
+        const expectedTextStyle = TextStyle(fontSize: 40);
+
+        await tester.pumpWidget(
+          wrap(
+            DefaultTextStyle(
+              style: expectedTextStyle,
+              child: widget,
+            ),
+          ),
+        );
+
+        final richText = findRichTextWidget(tester);
+        expect(richText.text.style, equals(expectedTextStyle));
+      },
+    );
+
     group('semantics', () {
       testWidgets('Default semantics', (tester) async {
         final widget = TaggedText(

@@ -152,7 +152,7 @@ class TaggedText extends StatefulWidget {
                 alignment: PlaceholderAlignment.middle,
                 child: _FocusableLink(
                   text: node.text,
-                  style: style,
+                  style: style ?? DefaultTextStyle.of(context).style,
                   linkStyle: linkStyle,
                   onTap: href != null ? () => onTapLink!(href) : null,
                 ),
@@ -201,9 +201,12 @@ class _TaggedTextState extends State<TaggedText> {
   Widget build(BuildContext context) {
     if (_textSpans == null) return Container();
 
+    final defaultTextStyle = DefaultTextStyle.of(context);
+    final style = widget.style ?? defaultTextStyle.style;
+
     return widget.selectableText
         ? SelectableText.rich(
-            TextSpan(children: _textSpans, style: widget.style),
+            TextSpan(children: _textSpans, style: style),
             textAlign: widget.textAlign,
             textDirection: widget.textDirection,
             textScaleFactor: widget.textScaleFactor ??
@@ -212,7 +215,7 @@ class _TaggedTextState extends State<TaggedText> {
             maxLines: widget.maxLines,
           )
         : RichText(
-            text: TextSpan(children: _textSpans, style: widget.style),
+            text: TextSpan(children: _textSpans, style: style),
             textAlign: widget.textAlign,
             textDirection: widget.textDirection,
             softWrap: widget.softWrap,

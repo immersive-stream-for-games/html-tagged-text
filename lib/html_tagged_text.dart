@@ -204,14 +204,15 @@ class _TaggedTextState extends State<TaggedText> {
     final defaultTextStyle = DefaultTextStyle.of(context);
     final style = widget.style ?? defaultTextStyle.style;
 
-    return widget.selectableText
+    final mediaQuery = MediaQuery.maybeOf(context);
+
+    final content = widget.selectableText
         ? SelectableText.rich(
             TextSpan(children: _textSpans, style: style),
             textAlign: widget.textAlign,
             textDirection: widget.textDirection,
-            textScaleFactor: widget.textScaleFactor ??
-                MediaQuery.maybeOf(context)?.textScaleFactor ??
-                1.0,
+            textScaleFactor:
+                widget.textScaleFactor ?? mediaQuery?.textScaleFactor ?? 1.0,
             maxLines: widget.maxLines,
           )
         : RichText(
@@ -220,11 +221,18 @@ class _TaggedTextState extends State<TaggedText> {
             textDirection: widget.textDirection,
             softWrap: widget.softWrap,
             overflow: widget.overflow,
-            textScaleFactor: widget.textScaleFactor ??
-                MediaQuery.maybeOf(context)?.textScaleFactor ??
-                1.0,
+            textScaleFactor:
+                widget.textScaleFactor ?? mediaQuery?.textScaleFactor ?? 1.0,
             maxLines: widget.maxLines,
           );
+    if (mediaQuery == null) {
+      return content;
+    }
+    return MediaQuery(
+      // Set textScaleFactor: 1 so it isn't applied multiple times.
+      data: mediaQuery.copyWith(textScaleFactor: 1),
+      child: content,
+    );
   }
 
   void _parseContent() {

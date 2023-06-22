@@ -630,7 +630,7 @@ TextSpan? getSelectableTextSpan(SelectableText selectableText) {
 
 Widget wrap(Widget widget) {
   return Theme(
-    data: ThemeData(primaryColor: Colors.blue),
+    data: ThemeData(useMaterial3: false, primaryColor: Colors.blue),
     child: Directionality(
       textDirection: TextDirection.ltr,
       child: widget,

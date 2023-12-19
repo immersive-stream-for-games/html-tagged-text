@@ -187,7 +187,7 @@ void main() {
       );
       expect(childTextSpan.recognizer, isNotNull);
 
-      await tester.tap(find.byType(RichText));
+      await tester.tapOnText(find.textRange.ofSubstring('This is a link'));
       expect(linkUrl, equals('http://example.com'));
     });
 

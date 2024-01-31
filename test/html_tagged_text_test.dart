@@ -140,8 +140,8 @@ void main() {
 
     testWidgets('default tags are handled correctly', (tester) async {
       final widget = TaggedText(
-        content:
-            '<b>Hello</b>, <strong>my</strong> <em>name</em> <u>is</u><br/><i>George</i>!',
+        content: '<b>Hello</b>, <strong>my</strong> <em>name</em> <u>is</u>'
+            '<br/><i>George</i> <s>the second</s>!',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -162,6 +162,11 @@ void main() {
         ),
         TextSpan(text: '\n'),
         TextSpan(text: 'George', style: TextStyle(fontStyle: FontStyle.italic)),
+        TextSpan(text: ' '),
+        TextSpan(
+          text: 'the second',
+          style: TextStyle(decoration: TextDecoration.lineThrough),
+        ),
         TextSpan(text: '!'),
       ]);
     });

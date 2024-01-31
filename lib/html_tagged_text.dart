@@ -363,6 +363,11 @@ final _defaultSpanBuilders = <String, _HtmlTextSpanBuilder>{
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(decoration: TextDecoration.underline),
       ),
+  's': (_, node) => TextSpan(
+        text: node.text,
+        semanticsLabel: node.getAttribute('aria-label'),
+        style: TextStyle(decoration: TextDecoration.lineThrough),
+      ),
   'i': (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
@@ -486,7 +491,6 @@ const _bannedHtmlTags = {
   'rt',
   'rtc',
   'ruby',
-  's',
   'samp',
   'script',
   'section',

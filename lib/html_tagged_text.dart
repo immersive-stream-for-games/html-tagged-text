@@ -202,8 +202,10 @@ class _TaggedTextState extends State<TaggedText> {
     if (_textSpans == null) return Container();
 
     final defaultTextStyle = DefaultTextStyle.of(context);
-    final style = widget.style ?? defaultTextStyle.style;
-
+    TextStyle? style = widget.style ?? defaultTextStyle.style;
+    if (MediaQuery.boldTextOf(context)) {
+      style = style.merge(const TextStyle(fontWeight: FontWeight.bold));
+    }
     final mediaQuery = MediaQuery.maybeOf(context);
 
     final content = widget.selectableText

@@ -115,6 +115,9 @@ class TaggedText extends StatefulWidget {
   /// A map of default [_HtmlTextSpanBuilder]s by lower-case HTML tag name.
   final Map<String, _HtmlTextSpanBuilder> defaultTextSpanBuilders;
 
+  /// Creates a new [TaggedText].
+  ///
+  /// For unspecified parameters, the defaults in [RichText] will be used.
   TaggedText({
     Key? key,
     required this.content,
@@ -156,11 +159,7 @@ class TaggedText extends StatefulWidget {
               )
             : TextSpan(
                 text: node.text,
-                style: linkStyle ??
-                    TextStyle(
-                      color: colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
+                style: linkStyle ?? TextStyle(color: colorScheme.primary),
                 recognizer: href != null
                     ? (TapGestureRecognizer()..onTap = () => onTapLink!(href))
                     : null,
@@ -334,11 +333,8 @@ class _FocusableLinkState extends State<_FocusableLink> {
               child: Text(
                 widget.text,
                 style: widget.linkStyle ??
-                    (widget.style?.copyWith(color: colors.primary) ??
-                            TextStyle(color: colors.primary))
-                        .copyWith(
-                      decoration: _focused ? null : TextDecoration.underline,
-                    ),
+                    widget.style?.copyWith(color: colors.primary) ??
+                    TextStyle(color: colors.primary),
               ),
             ),
           ),

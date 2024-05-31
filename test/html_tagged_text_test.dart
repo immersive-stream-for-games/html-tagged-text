@@ -188,12 +188,7 @@ void main() {
       expect(childTextSpan.text, equals('This is a link'));
       expect(
         childTextSpan.style,
-        equals(
-          TextStyle(
-            color: Colors.blue,
-            decoration: TextDecoration.underline,
-          ),
-        ),
+        equals(TextStyle(color: Colors.blue)),
       );
       expect(childTextSpan.recognizer, isNotNull);
 

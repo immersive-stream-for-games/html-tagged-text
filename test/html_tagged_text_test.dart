@@ -176,6 +176,7 @@ void main() {
       final widget = TaggedText(
         content: '<a href="http://example.com">This is a link</a>',
         onTapLink: (url) => linkUrl = url,
+        linkSemanticsLabel: 'Link semantics label',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -207,6 +208,7 @@ void main() {
         content: '<a href="http://example.com">This is a link</a>',
         onTapLink: (url) {},
         linkStyle: TextStyle(color: Colors.red),
+        linkSemanticsLabel: 'Link semantics label',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -232,6 +234,7 @@ void main() {
         content: '<a href="http://example.com">This is a link</a>',
         onTapLink: (url) => linkUrl = url,
         focusableLinks: true,
+        linkSemanticsLabel: 'Link semantics label',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -610,6 +613,24 @@ void main() {
           find.bySemanticsLabel(
             'On Android devices, select Google and then Parental controls',
           ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('linkSemanticsLabel is announced on link focus',
+          (tester) async {
+        String urlLink = '';
+        final widget = TaggedText(
+          content: '<a href="http://example.com">This is a link</a>',
+          onTapLink: (url) => urlLink = url,
+          linkSemanticsLabel: 'Link semantics label',
+          focusableLinks: true,
+        );
+
+        await tester.pumpWidget(wrap(widget));
+
+        expect(
+          find.bySemanticsLabel('Link semantics label'),
           findsOneWidget,
         );
       });

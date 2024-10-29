@@ -115,6 +115,10 @@ class TaggedText extends StatefulWidget {
   /// A map of default [_HtmlTextSpanBuilder]s by lower-case HTML tag name.
   final Map<String, _HtmlTextSpanBuilder> defaultTextSpanBuilders;
 
+  /// The semantics label for the link. It allows for more descriptive text
+  /// for screen readers.
+  final String? linkSemanticsLabel;
+
   TaggedText({
     Key? key,
     required this.content,
@@ -130,6 +134,7 @@ class TaggedText extends StatefulWidget {
     this.maxLines,
     this.onTapLink,
     this.focusableLinks = false,
+    this.linkSemanticsLabel,
   })  : assert(
           tagToTextSpanBuilder.keys.every((key) {
             return key == key.toLowerCase() && !_bannedHtmlTags.contains(key);
@@ -148,6 +153,7 @@ class TaggedText extends StatefulWidget {
             ? WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: _FocusableLink(
+                  label: linkSemanticsLabel,
                   text: node.text,
                   style: style ?? DefaultTextStyle.of(context).style,
                   linkStyle: linkStyle,
@@ -290,12 +296,14 @@ class _FocusableLink extends StatefulWidget {
     this.style,
     this.linkStyle,
     this.onTap,
+    this.label,
   }) : super(key: key);
 
   final String text;
   final TextStyle? style;
   final TextStyle? linkStyle;
   final GestureTapCallback? onTap;
+  final String? label;
 
   @override
   State<StatefulWidget> createState() => _FocusableLinkState();
@@ -308,6 +316,7 @@ class _FocusableLinkState extends State<_FocusableLink> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Semantics(
+      label: widget.label,
       link: true,
       container: true,
       child: GestureDetector(

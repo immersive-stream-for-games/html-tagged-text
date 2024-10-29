@@ -68,7 +68,7 @@ void main() {
         child: TaggedText(
           selectableText: true,
           content:
-              '<greeting>Hello</greeting>, my name is <name>George</name>!',
+          '<greeting>Hello</greeting>, my name is <name>George</name>!',
           tagToTextSpanBuilder: {
             'greeting': (text) => TextSpan(text: text, style: greetingStyle),
             'name': (text) => TextSpan(text: text, style: nameStyle),
@@ -176,6 +176,7 @@ void main() {
       final widget = TaggedText(
         content: '<a href="http://example.com">This is a link</a>',
         onTapLink: (url) => linkUrl = url,
+        linkSemanticsLabel: 'Link semantics label',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -207,6 +208,7 @@ void main() {
         content: '<a href="http://example.com">This is a link</a>',
         onTapLink: (url) {},
         linkStyle: TextStyle(color: Colors.red),
+        linkSemanticsLabel: 'Link semantics label',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -223,7 +225,7 @@ void main() {
 
     testWidgets('anchor tags are focusable', (tester) async {
       final gesture =
-          await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
+      await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
       await gesture.addPointer(location: const Offset(1, 1));
       addTearDown(gesture.removePointer);
 
@@ -232,6 +234,7 @@ void main() {
         content: '<a href="http://example.com">This is a link</a>',
         onTapLink: (url) => linkUrl = url,
         focusableLinks: true,
+        linkSemanticsLabel: 'Link semantics label',
       );
 
       await tester.pumpWidget(wrap(widget));
@@ -283,7 +286,7 @@ void main() {
     testWidgets('asserts all tags in content are found', (tester) async {
       final widget = TaggedText(
         content:
-            '<salutation>Hello</salutation>, my name is <name>George</name>!',
+        '<salutation>Hello</salutation>, my name is <name>George</name>!',
         tagToTextSpanBuilder: {
           'name': (text) => TextSpan(text: text, style: nameStyle),
         },
@@ -348,76 +351,77 @@ void main() {
     });
 
     testWidgets('does not rebuild when tagToTextSpanBuilder stays the same',
-        (tester) async {
-      // Set up.
-      final mockTextSpanBuilder = MockTextSpanBuilder();
-      final nameSpan = TextSpan(text: 'Bob', style: nameStyle);
-      when(mockTextSpanBuilder.call(any)).thenReturn(nameSpan);
+            (tester) async {
+          // Set up.
+          final mockTextSpanBuilder = MockTextSpanBuilder();
+          final nameSpan = TextSpan(text: 'Bob', style: nameStyle);
+          when(mockTextSpanBuilder.call(any)).thenReturn(nameSpan);
 
-      final content = 'Hello, <name>Bob</name>';
-      final tagToTextSpanBuilder = <String, TextSpanBuilder>{
-        // TODO Eliminate this wrapper when the Dart 2 FE
-        // supports mocking and tearoffs.
-        'name': (x) => mockTextSpanBuilder(x),
-      };
-      final widget = TaggedText(
-        content: content,
-        tagToTextSpanBuilder: tagToTextSpanBuilder,
-      );
-      await tester.pumpWidget(wrap(widget));
+          final content = 'Hello, <name>Bob</name>';
+          final tagToTextSpanBuilder = <String, TextSpanBuilder>{
+            // TODO Eliminate this wrapper when the Dart 2 FE
+            // supports mocking and tearoffs.
+            'name': (x) => mockTextSpanBuilder(x),
+          };
+          final widget = TaggedText(
+            content: content,
+            tagToTextSpanBuilder: tagToTextSpanBuilder,
+          );
+          await tester.pumpWidget(wrap(widget));
 
-      // Clone map to make sure that equality is checked by the contents of the
-      // map.
-      final newWidget = TaggedText(
-        content: content,
-        tagToTextSpanBuilder: Map.from(tagToTextSpanBuilder),
-      );
+          // Clone map to make sure that equality is checked by the contents of the
+          // map.
+          final newWidget = TaggedText(
+            content: content,
+            tagToTextSpanBuilder: Map.from(tagToTextSpanBuilder),
+          );
 
-      // Act.
-      await tester.pumpWidget(wrap(newWidget));
+          // Act.
+          await tester.pumpWidget(wrap(newWidget));
 
-      // Assert.
-      final richText = findRichTextWidget(tester);
-      final textSpan = getTextSpan(richText);
-      expect(textSpan.text, isNull);
-      expect(textSpan.children, [
-        TextSpan(text: 'Hello, '),
-        nameSpan,
-      ]);
-      verify(mockTextSpanBuilder.call(any)).called(1);
-    });
+          // Assert.
+          final richText = findRichTextWidget(tester);
+          final textSpan = getTextSpan(richText);
+          expect(textSpan.text, isNull);
+          expect(textSpan.children, [
+            TextSpan(text: 'Hello, '),
+            nameSpan,
+          ]);
+          verify(mockTextSpanBuilder.call(any)).called(1);
+        });
 
     testWidgets('requires tag names to be lower case', (tester) async {
       expect(
-        () => TaggedText(
-          content: 'Hello, <name>Bob</name>',
-          tagToTextSpanBuilder: {
-            'nAme': (text) => TextSpan(text: text, style: nameStyle),
-          },
-        ),
+            () =>
+            TaggedText(
+              content: 'Hello, <name>Bob</name>',
+              tagToTextSpanBuilder: {
+                'nAme': (text) => TextSpan(text: text, style: nameStyle),
+              },
+            ),
         throwsA(anything),
       );
     });
 
     testWidgets('requires tag names to be lower case with selectable text',
-        (tester) async {
-      expect(
-        () {
-          TaggedText(
-            selectableText: true,
-            content: 'Hello, <name>Bob</name>',
-            tagToTextSpanBuilder: {
-              'nAme': (text) => TextSpan(text: text, style: nameStyle),
+            (tester) async {
+          expect(
+                () {
+              TaggedText(
+                selectableText: true,
+                content: 'Hello, <name>Bob</name>',
+                tagToTextSpanBuilder: {
+                  'nAme': (text) => TextSpan(text: text, style: nameStyle),
+                },
+              );
             },
+            throwsA(anything),
           );
-        },
-        throwsA(anything),
-      );
-    });
+        });
 
     testWidgets('throws error when known HTML tags are used', (tester) async {
       expect(
-        () {
+            () {
           TaggedText(
             content: 'Hello, <link>Bob</link>',
             tagToTextSpanBuilder: {
@@ -431,20 +435,20 @@ void main() {
 
     testWidgets(
         'throws error when known HTML tags are used with selectable text',
-        (tester) async {
-      expect(
-        () {
-          TaggedText(
-            selectableText: true,
-            content: 'Hello, <link>Bob</link>',
-            tagToTextSpanBuilder: {
-              'link': (text) => TextSpan(text: text, style: nameStyle),
+            (tester) async {
+          expect(
+                () {
+              TaggedText(
+                selectableText: true,
+                content: 'Hello, <link>Bob</link>',
+                tagToTextSpanBuilder: {
+                  'link': (text) => TextSpan(text: text, style: nameStyle),
+                },
+              );
             },
+            throwsA(anything),
           );
-        },
-        throwsA(anything),
-      );
-    });
+        });
 
     testWidgets('ignores non-elements', (tester) async {
       final widget = TaggedText(
@@ -519,7 +523,7 @@ void main() {
 
     testWidgets(
         'uses 1.0 text scale factor when not specified and '
-        'MediaQuery unavailable', (tester) async {
+            'MediaQuery unavailable', (tester) async {
       final widget = TaggedText(
         content: '<greeting>Hello</greeting>',
         tagToTextSpanBuilder: {
@@ -535,32 +539,32 @@ void main() {
     });
 
     testWidgets('uses MediaQuery text scale factor when available',
-        (tester) async {
-      final widget = TaggedText(
-        content: '<greeting>Hello</greeting>',
-        tagToTextSpanBuilder: {
-          'greeting': (text) => TextSpan(text: text, style: greetingStyle),
-        },
-        // Text scale factor not specified!
-      );
-      final expectedTextScaleFactor = 123.4;
+            (tester) async {
+          final widget = TaggedText(
+            content: '<greeting>Hello</greeting>',
+            tagToTextSpanBuilder: {
+              'greeting': (text) => TextSpan(text: text, style: greetingStyle),
+            },
+            // Text scale factor not specified!
+          );
+          final expectedTextScaleFactor = 123.4;
 
-      await tester.pumpWidget(
-        wrap(
-          MediaQuery(
-            data: MediaQueryData(textScaleFactor: expectedTextScaleFactor),
-            child: widget,
-          ),
-        ),
-      );
+          await tester.pumpWidget(
+            wrap(
+              MediaQuery(
+                data: MediaQueryData(textScaleFactor: expectedTextScaleFactor),
+                child: widget,
+              ),
+            ),
+          );
 
-      final richText = findRichTextWidget(tester);
-      expect(richText.textScaleFactor, equals(expectedTextScaleFactor));
-    });
+          final richText = findRichTextWidget(tester);
+          expect(richText.textScaleFactor, equals(expectedTextScaleFactor));
+        });
 
     testWidgets(
       'uses DefaultTextStyle when available',
-      (tester) async {
+          (tester) async {
         final widget = TaggedText(
           content: '<greeting>Hello</greeting>',
           tagToTextSpanBuilder: {
@@ -613,6 +617,24 @@ void main() {
           findsOneWidget,
         );
       });
+
+      testWidgets('linkSemanticsLabel is announced on link focus',
+              (tester) async {
+            String urlLink = '';
+            final widget = TaggedText(
+              content: '<a href="http://example.com">This is a link</a>',
+              onTapLink: (url) => urlLink = url,
+              linkSemanticsLabel: 'Link semantics label',
+              focusableLinks: true,
+            );
+
+            await tester.pumpWidget(wrap(widget));
+
+            expect(
+              find.bySemanticsLabel(RegExp('Link semantics label'),),
+              findsOneWidget,
+            );
+          });
     });
   });
 }

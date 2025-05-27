@@ -28,9 +28,7 @@ void main() {
   group('$TaggedText', () {
     testWidgets('without tags', (tester) async {
       final content = 'Hello, Bob';
-      final widget = TaggedText(
-        content: content,
-      );
+      final widget = TaggedText(content: content);
 
       await tester.pumpWidget(wrap(widget));
 
@@ -62,13 +60,45 @@ void main() {
       ]);
     });
 
+    testWidgets('with tags and selection registrar', (tester) async {
+      final selectionColor = Colors.red;
+      final selectionRegistrar = TestSelectionRegistrar();
+      final widget = MediaQuery(
+        data: MediaQueryData(),
+        child: TaggedText(
+          content:
+              '<greeting>Hello</greeting>, my name is <name>George</name>!',
+          selectionColor: selectionColor,
+          selectionRegistrar: selectionRegistrar,
+          tagToTextSpanBuilder: {
+            'greeting': (text) => TextSpan(text: text, style: greetingStyle),
+            'name': (text) => TextSpan(text: text, style: nameStyle),
+          },
+        ),
+      );
+
+      await tester.pumpWidget(wrap(widget));
+
+      final richText = findRichTextWidget(tester);
+      final textSpan = getTextSpan(richText);
+      expect(richText.selectionColor, selectionColor);
+      expect(richText.selectionRegistrar, selectionRegistrar);
+      expect(textSpan.text, isNull);
+      expect(textSpan.children, [
+        TextSpan(text: 'Hello', style: greetingStyle),
+        TextSpan(text: ', my name is '),
+        TextSpan(text: 'George', style: nameStyle),
+        TextSpan(text: '!'),
+      ]);
+    });
+
     testWidgets('with tags and selectable text', (tester) async {
       final widget = MediaQuery(
         data: MediaQueryData(),
         child: TaggedText(
           selectableText: true,
           content:
-          '<greeting>Hello</greeting>, my name is <name>George</name>!',
+              '<greeting>Hello</greeting>, my name is <name>George</name>!',
           tagToTextSpanBuilder: {
             'greeting': (text) => TextSpan(text: text, style: greetingStyle),
             'name': (text) => TextSpan(text: text, style: nameStyle),
@@ -140,7 +170,8 @@ void main() {
 
     testWidgets('default tags are handled correctly', (tester) async {
       final widget = TaggedText(
-        content: '<b>Hello</b>, <strong>my</strong> <em>name</em> <u>is</u>'
+        content:
+            '<b>Hello</b>, <strong>my</strong> <em>name</em> <u>is</u>'
             '<br/><i>George</i> <s>the second</s>!',
       );
 
@@ -217,15 +248,14 @@ void main() {
       final textSpan = getTextSpan(richText);
       final childTextSpan = textSpan.children!.first as TextSpan;
       expect(childTextSpan.text, equals('This is a link'));
-      expect(
-        childTextSpan.style,
-        equals(TextStyle(color: Colors.red)),
-      );
+      expect(childTextSpan.style, equals(TextStyle(color: Colors.red)));
     });
 
     testWidgets('anchor tags are focusable', (tester) async {
-      final gesture =
-      await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
+      final gesture = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+        pointer: 1,
+      );
       await gesture.addPointer(location: const Offset(1, 1));
       addTearDown(gesture.removePointer);
 
@@ -286,7 +316,7 @@ void main() {
     testWidgets('asserts all tags in content are found', (tester) async {
       final widget = TaggedText(
         content:
-        '<salutation>Hello</salutation>, my name is <name>George</name>!',
+            '<salutation>Hello</salutation>, my name is <name>George</name>!',
         tagToTextSpanBuilder: {
           'name': (text) => TextSpan(text: text, style: nameStyle),
         },
@@ -350,109 +380,100 @@ void main() {
       ]);
     });
 
-    testWidgets('does not rebuild when tagToTextSpanBuilder stays the same',
-            (tester) async {
-          // Set up.
-          final mockTextSpanBuilder = MockTextSpanBuilder();
-          final nameSpan = TextSpan(text: 'Bob', style: nameStyle);
-          when(mockTextSpanBuilder.call(any)).thenReturn(nameSpan);
+    testWidgets('does not rebuild when tagToTextSpanBuilder stays the same', (
+      tester,
+    ) async {
+      // Set up.
+      final mockTextSpanBuilder = MockTextSpanBuilder();
+      final nameSpan = TextSpan(text: 'Bob', style: nameStyle);
+      when(mockTextSpanBuilder.call(any)).thenReturn(nameSpan);
 
-          final content = 'Hello, <name>Bob</name>';
-          final tagToTextSpanBuilder = <String, TextSpanBuilder>{
-            // TODO Eliminate this wrapper when the Dart 2 FE
-            // supports mocking and tearoffs.
-            'name': (x) => mockTextSpanBuilder(x),
-          };
-          final widget = TaggedText(
-            content: content,
-            tagToTextSpanBuilder: tagToTextSpanBuilder,
-          );
-          await tester.pumpWidget(wrap(widget));
+      final content = 'Hello, <name>Bob</name>';
+      final tagToTextSpanBuilder = <String, TextSpanBuilder>{
+        // TODO Eliminate this wrapper when the Dart 2 FE
+        // supports mocking and tearoffs.
+        'name': (x) => mockTextSpanBuilder(x),
+      };
+      final widget = TaggedText(
+        content: content,
+        tagToTextSpanBuilder: tagToTextSpanBuilder,
+      );
+      await tester.pumpWidget(wrap(widget));
 
-          // Clone map to make sure that equality is checked by the contents of the
-          // map.
-          final newWidget = TaggedText(
-            content: content,
-            tagToTextSpanBuilder: Map.from(tagToTextSpanBuilder),
-          );
+      // Clone map to make sure that equality is checked by the contents of the
+      // map.
+      final newWidget = TaggedText(
+        content: content,
+        tagToTextSpanBuilder: Map.from(tagToTextSpanBuilder),
+      );
 
-          // Act.
-          await tester.pumpWidget(wrap(newWidget));
+      // Act.
+      await tester.pumpWidget(wrap(newWidget));
 
-          // Assert.
-          final richText = findRichTextWidget(tester);
-          final textSpan = getTextSpan(richText);
-          expect(textSpan.text, isNull);
-          expect(textSpan.children, [
-            TextSpan(text: 'Hello, '),
-            nameSpan,
-          ]);
-          verify(mockTextSpanBuilder.call(any)).called(1);
-        });
+      // Assert.
+      final richText = findRichTextWidget(tester);
+      final textSpan = getTextSpan(richText);
+      expect(textSpan.text, isNull);
+      expect(textSpan.children, [TextSpan(text: 'Hello, '), nameSpan]);
+      verify(mockTextSpanBuilder.call(any)).called(1);
+    });
 
     testWidgets('requires tag names to be lower case', (tester) async {
       expect(
-            () =>
-            TaggedText(
-              content: 'Hello, <name>Bob</name>',
-              tagToTextSpanBuilder: {
-                'nAme': (text) => TextSpan(text: text, style: nameStyle),
-              },
-            ),
+        () => TaggedText(
+          content: 'Hello, <name>Bob</name>',
+          tagToTextSpanBuilder: {
+            'nAme': (text) => TextSpan(text: text, style: nameStyle),
+          },
+        ),
         throwsA(anything),
       );
     });
 
-    testWidgets('requires tag names to be lower case with selectable text',
-            (tester) async {
-          expect(
-                () {
-              TaggedText(
-                selectableText: true,
-                content: 'Hello, <name>Bob</name>',
-                tagToTextSpanBuilder: {
-                  'nAme': (text) => TextSpan(text: text, style: nameStyle),
-                },
-              );
-            },
-            throwsA(anything),
-          );
-        });
+    testWidgets('requires tag names to be lower case with selectable text', (
+      tester,
+    ) async {
+      expect(() {
+        TaggedText(
+          selectableText: true,
+          content: 'Hello, <name>Bob</name>',
+          tagToTextSpanBuilder: {
+            'nAme': (text) => TextSpan(text: text, style: nameStyle),
+          },
+        );
+      }, throwsA(anything));
+    });
 
     testWidgets('throws error when known HTML tags are used', (tester) async {
-      expect(
-            () {
+      expect(() {
+        TaggedText(
+          content: 'Hello, <link>Bob</link>',
+          tagToTextSpanBuilder: {
+            'link': (text) => TextSpan(text: text, style: nameStyle),
+          },
+        );
+      }, throwsA(anything));
+    });
+
+    testWidgets(
+      'throws error when known HTML tags are used with selectable text',
+      (tester) async {
+        expect(() {
           TaggedText(
+            selectableText: true,
             content: 'Hello, <link>Bob</link>',
             tagToTextSpanBuilder: {
               'link': (text) => TextSpan(text: text, style: nameStyle),
             },
           );
-        },
-        throwsA(anything),
-      );
-    });
-
-    testWidgets(
-        'throws error when known HTML tags are used with selectable text',
-            (tester) async {
-          expect(
-                () {
-              TaggedText(
-                selectableText: true,
-                content: 'Hello, <link>Bob</link>',
-                tagToTextSpanBuilder: {
-                  'link': (text) => TextSpan(text: text, style: nameStyle),
-                },
-              );
-            },
-            throwsA(anything),
-          );
-        });
+        }, throwsA(anything));
+      },
+    );
 
     testWidgets('ignores non-elements', (tester) async {
       final widget = TaggedText(
-        content: 'Hello, <!-- comment is not an element and is ignored -->'
+        content:
+            'Hello, <!-- comment is not an element and is ignored -->'
             '<name>Bob</name>',
         tagToTextSpanBuilder: {
           'name': (text) => TextSpan(text: text, style: nameStyle),
@@ -475,7 +496,8 @@ void main() {
         data: MediaQueryData(),
         child: TaggedText(
           selectableText: true,
-          content: 'Hello, <!-- comment is not an element and is ignored -->'
+          content:
+              'Hello, <!-- comment is not an element and is ignored -->'
               '<name>Bob</name>',
           tagToTextSpanBuilder: {
             'name': (text) => TextSpan(text: text, style: nameStyle),
@@ -521,9 +543,8 @@ void main() {
       expect(richText.maxLines, equals(2));
     });
 
-    testWidgets(
-        'uses 1.0 text scale factor when not specified and '
-            'MediaQuery unavailable', (tester) async {
+    testWidgets('uses 1.0 text scale factor when not specified and '
+        'MediaQuery unavailable', (tester) async {
       final widget = TaggedText(
         content: '<greeting>Hello</greeting>',
         tagToTextSpanBuilder: {
@@ -538,55 +559,48 @@ void main() {
       expect(richText.textScaleFactor, equals(1.0));
     });
 
-    testWidgets('uses MediaQuery text scale factor when available',
-            (tester) async {
-          final widget = TaggedText(
-            content: '<greeting>Hello</greeting>',
-            tagToTextSpanBuilder: {
-              'greeting': (text) => TextSpan(text: text, style: greetingStyle),
-            },
-            // Text scale factor not specified!
-          );
-          final expectedTextScaleFactor = 123.4;
+    testWidgets('uses MediaQuery text scale factor when available', (
+      tester,
+    ) async {
+      final widget = TaggedText(
+        content: '<greeting>Hello</greeting>',
+        tagToTextSpanBuilder: {
+          'greeting': (text) => TextSpan(text: text, style: greetingStyle),
+        },
+        // Text scale factor not specified!
+      );
+      final expectedTextScaleFactor = 123.4;
 
-          await tester.pumpWidget(
-            wrap(
-              MediaQuery(
-                data: MediaQueryData(textScaleFactor: expectedTextScaleFactor),
-                child: widget,
-              ),
-            ),
-          );
-
-          final richText = findRichTextWidget(tester);
-          expect(richText.textScaleFactor, equals(expectedTextScaleFactor));
-        });
-
-    testWidgets(
-      'uses DefaultTextStyle when available',
-          (tester) async {
-        final widget = TaggedText(
-          content: '<greeting>Hello</greeting>',
-          tagToTextSpanBuilder: {
-            'greeting': (text) => TextSpan(text: text, style: greetingStyle),
-          },
-          // Style not specified!
-        );
-        const expectedTextStyle = TextStyle(fontSize: 40);
-
-        await tester.pumpWidget(
-          wrap(
-            DefaultTextStyle(
-              style: expectedTextStyle,
-              child: widget,
-            ),
+      await tester.pumpWidget(
+        wrap(
+          MediaQuery(
+            data: MediaQueryData(textScaleFactor: expectedTextScaleFactor),
+            child: widget,
           ),
-        );
+        ),
+      );
 
-        final richText = findRichTextWidget(tester);
-        expect(richText.text.style, equals(expectedTextStyle));
-      },
-    );
+      final richText = findRichTextWidget(tester);
+      expect(richText.textScaleFactor, equals(expectedTextScaleFactor));
+    });
+
+    testWidgets('uses DefaultTextStyle when available', (tester) async {
+      final widget = TaggedText(
+        content: '<greeting>Hello</greeting>',
+        tagToTextSpanBuilder: {
+          'greeting': (text) => TextSpan(text: text, style: greetingStyle),
+        },
+        // Style not specified!
+      );
+      const expectedTextStyle = TextStyle(fontSize: 40);
+
+      await tester.pumpWidget(
+        wrap(DefaultTextStyle(style: expectedTextStyle, child: widget)),
+      );
+
+      final richText = findRichTextWidget(tester);
+      expect(richText.text.style, equals(expectedTextStyle));
+    });
 
     group('semantics', () {
       testWidgets('Default semantics', (tester) async {
@@ -604,7 +618,8 @@ void main() {
 
       testWidgets('Custom semantics', (tester) async {
         final widget = TaggedText(
-          content: '<b>On Android devices,</b> <u>select Google</u> '
+          content:
+              '<b>On Android devices,</b> <u>select Google</u> '
               '<span aria-label="and then">></span> <i>Parental controls</i>',
         );
 
@@ -618,23 +633,24 @@ void main() {
         );
       });
 
-      testWidgets('linkSemanticsLabel is announced on link focus',
-              (tester) async {
-            String urlLink = '';
-            final widget = TaggedText(
-              content: '<a href="http://example.com">This is a link</a>',
-              onTapLink: (url) => urlLink = url,
-              linkSemanticsLabel: 'Link semantics label',
-              focusableLinks: true,
-            );
+      testWidgets('linkSemanticsLabel is announced on link focus', (
+        tester,
+      ) async {
+        String urlLink = '';
+        final widget = TaggedText(
+          content: '<a href="http://example.com">This is a link</a>',
+          onTapLink: (url) => urlLink = url,
+          linkSemanticsLabel: 'Link semantics label',
+          focusableLinks: true,
+        );
 
-            await tester.pumpWidget(wrap(widget));
+        await tester.pumpWidget(wrap(widget));
 
-            expect(
-              find.bySemanticsLabel(RegExp('Link semantics label'),),
-              findsOneWidget,
-            );
-          });
+        expect(
+          find.bySemanticsLabel(RegExp('Link semantics label')),
+          findsOneWidget,
+        );
+      });
     });
   });
 }
@@ -664,13 +680,20 @@ TextSpan? getSelectableTextSpan(SelectableText selectableText) {
 Widget wrap(Widget widget) {
   return Theme(
     data: ThemeData(useMaterial3: false, primaryColor: Colors.blue),
-    child: Directionality(
-      textDirection: TextDirection.ltr,
-      child: widget,
-    ),
+    child: Directionality(textDirection: TextDirection.ltr, child: widget),
   );
 }
 
 class MockTextSpanBuilder extends Mock {
   TextSpan? call(String? text);
+}
+
+class TestSelectionRegistrar extends SelectionRegistrar {
+  final Set<Selectable> selectables = <Selectable>{};
+
+  @override
+  void add(Selectable selectable) => selectables.add(selectable);
+
+  @override
+  void remove(Selectable selectable) => selectables.remove(selectable);
 }

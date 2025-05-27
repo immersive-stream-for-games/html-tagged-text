@@ -15,6 +15,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:xml/xml.dart';
 
@@ -28,10 +29,8 @@ typedef InlineSpanBuilder = InlineSpan? Function(String text);
 typedef LinkCallback = void Function(String href);
 
 /// Builds a [TextSpan] with the provided [node].
-typedef _HtmlTextSpanBuilder = InlineSpan Function(
-  BuildContext context,
-  XmlNode node,
-);
+typedef _HtmlTextSpanBuilder =
+    InlineSpan Function(BuildContext context, XmlNode node);
 
 /// Displays the provided [content] in a [RichText] after parsing and replacing
 /// HTML tags using [tagToTextSpanBuilder].
@@ -79,6 +78,15 @@ class TaggedText extends StatefulWidget {
   ///
   /// See [SelectableText.rich].
   final bool selectableText;
+
+  /// The color to use when painting the selection.
+  ///
+  /// This is ignored if [selectionRegistrar] is null and [selectableText] is
+  /// false.
+  final Color? selectionColor;
+
+  /// The [SelectionRegistrar] this rich text is subscribed to.
+  final SelectionRegistrar? selectionRegistrar;
 
   /// The manner in which to handle visual overflow of the spans of text.
   ///
@@ -129,49 +137,53 @@ class TaggedText extends StatefulWidget {
     this.textDirection,
     this.softWrap = true,
     this.selectableText = false,
+    this.selectionColor,
+    this.selectionRegistrar,
     this.overflow = TextOverflow.clip,
     this.textScaleFactor,
     this.maxLines,
     this.onTapLink,
     this.focusableLinks = false,
     this.linkSemanticsLabel,
-  })  : assert(
-          tagToTextSpanBuilder.keys.every((key) {
-            return key == key.toLowerCase() && !_bannedHtmlTags.contains(key);
-          }),
-          'All keys must be lowercase. Actual HTML tags are not allowed to '
-          'avoid confusion as this is not an HTML renderer. '
-          'See README.md of this library.',
-        ),
-        defaultTextSpanBuilders = {..._defaultSpanBuilders},
-        super(key: key) {
+  }) : assert(
+         tagToTextSpanBuilder.keys.every((key) {
+           return key == key.toLowerCase() && !_bannedHtmlTags.contains(key);
+         }),
+         'All keys must be lowercase. Actual HTML tags are not allowed to '
+         'avoid confusion as this is not an HTML renderer. '
+         'See README.md of this library.',
+       ),
+       defaultTextSpanBuilders = {..._defaultSpanBuilders},
+       super(key: key) {
     if (onTapLink != null) {
       defaultTextSpanBuilders['a'] = (context, node) {
         final colorScheme = Theme.of(context).colorScheme;
         final href = node.getAttribute('href');
         return focusableLinks
             ? WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: _FocusableLink(
-                  label: linkSemanticsLabel,
-                  text: node.text,
-                  style: style ?? DefaultTextStyle.of(context).style,
-                  linkStyle: linkStyle,
-                  onTap: href != null ? () => onTapLink!(href) : null,
-                ),
-              )
-            : TextSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: _FocusableLink(
+                label: linkSemanticsLabel,
                 text: node.text,
-                style: linkStyle ??
-                    TextStyle(
-                      color: colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                      decorationColor: colorScheme.primary,
-                    ),
-                recognizer: href != null
-                    ? (TapGestureRecognizer()..onTap = () => onTapLink!(href))
-                    : null,
-              );
+                style: style ?? DefaultTextStyle.of(context).style,
+                linkStyle: linkStyle,
+                onTap: href != null ? () => onTapLink!(href) : null,
+              ),
+            )
+            : TextSpan(
+              text: node.text,
+              style:
+                  linkStyle ??
+                  TextStyle(
+                    color: colorScheme.primary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: colorScheme.primary,
+                  ),
+              recognizer:
+                  href != null
+                      ? (TapGestureRecognizer()..onTap = () => onTapLink!(href))
+                      : null,
+            );
       };
     }
   }
@@ -199,8 +211,10 @@ class _TaggedTextState extends State<TaggedText> {
     if (oldWidget.content != widget.content) {
       _parseContent();
       _parseSpans();
-    } else if (!(const MapEquality()
-        .equals(oldWidget.tagToTextSpanBuilder, widget.tagToTextSpanBuilder))) {
+    } else if (!(const MapEquality().equals(
+      oldWidget.tagToTextSpanBuilder,
+      widget.tagToTextSpanBuilder,
+    ))) {
       _parseSpans();
     }
   }
@@ -216,25 +230,29 @@ class _TaggedTextState extends State<TaggedText> {
     }
     final mediaQuery = MediaQuery.maybeOf(context);
 
-    final content = widget.selectableText
-        ? SelectableText.rich(
-            TextSpan(children: _textSpans, style: style),
-            textAlign: widget.textAlign,
-            textDirection: widget.textDirection,
-            textScaleFactor:
-                widget.textScaleFactor ?? mediaQuery?.textScaleFactor ?? 1.0,
-            maxLines: widget.maxLines,
-          )
-        : RichText(
-            text: TextSpan(children: _textSpans, style: style),
-            textAlign: widget.textAlign,
-            textDirection: widget.textDirection,
-            softWrap: widget.softWrap,
-            overflow: widget.overflow,
-            textScaleFactor:
-                widget.textScaleFactor ?? mediaQuery?.textScaleFactor ?? 1.0,
-            maxLines: widget.maxLines,
-          );
+    final content =
+        widget.selectableText
+            ? SelectableText.rich(
+              TextSpan(children: _textSpans, style: style),
+              selectionColor: widget.selectionColor,
+              textAlign: widget.textAlign,
+              textDirection: widget.textDirection,
+              textScaleFactor:
+                  widget.textScaleFactor ?? mediaQuery?.textScaleFactor ?? 1.0,
+              maxLines: widget.maxLines,
+            )
+            : RichText(
+              text: TextSpan(children: _textSpans, style: style),
+              textAlign: widget.textAlign,
+              textDirection: widget.textDirection,
+              softWrap: widget.softWrap,
+              overflow: widget.overflow,
+              selectionColor: widget.selectionColor,
+              selectionRegistrar: widget.selectionRegistrar,
+              textScaleFactor:
+                  widget.textScaleFactor ?? mediaQuery?.textScaleFactor ?? 1.0,
+              maxLines: widget.maxLines,
+            );
     if (mediaQuery == null) {
       return content;
     }
@@ -260,31 +278,37 @@ class _TaggedTextState extends State<TaggedText> {
 
   void _parseSpans() {
     setState(() {
-      _textSpans = _document?.children
-          .map((node) {
-            if (node is XmlText) {
-              return TextSpan(text: node.text);
-            }
+      _textSpans =
+          _document?.children
+              .map((node) {
+                if (node is XmlText) {
+                  return TextSpan(text: node.text);
+                }
 
-            if (node is! XmlElement) return null;
+                if (node is! XmlElement) return null;
 
-            assert(node.tags.isEmpty, 'Tags should not be placed within tags.');
+                assert(
+                  node.tags.isEmpty,
+                  'Tags should not be placed within tags.',
+                );
 
-            final tagName = node.localNameLowerCase;
-            final textSpanBuilder = widget.tagToTextSpanBuilder[tagName];
-            final defaultTextSpanBuilder =
-                widget.defaultTextSpanBuilders[tagName];
+                final tagName = node.localNameLowerCase;
+                final textSpanBuilder = widget.tagToTextSpanBuilder[tagName];
+                final defaultTextSpanBuilder =
+                    widget.defaultTextSpanBuilders[tagName];
 
-            assert(textSpanBuilder != null || defaultTextSpanBuilder != null);
-            if (textSpanBuilder == null && defaultTextSpanBuilder == null) {
-              return TextSpan(text: node.text);
-            }
+                assert(
+                  textSpanBuilder != null || defaultTextSpanBuilder != null,
+                );
+                if (textSpanBuilder == null && defaultTextSpanBuilder == null) {
+                  return TextSpan(text: node.text);
+                }
 
-            return textSpanBuilder?.call(node.text) ??
-                defaultTextSpanBuilder?.call(context, node);
-          })
-          .whereNotNull()
-          .toList();
+                return textSpanBuilder?.call(node.text) ??
+                    defaultTextSpanBuilder?.call(context, node);
+              })
+              .whereNotNull()
+              .toList();
     });
   }
 }
@@ -335,21 +359,24 @@ class _FocusableLinkState extends State<_FocusableLink> {
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: Container(
-              decoration: _focused
-                  ? BoxDecoration(
-                      color: colors.primary.withOpacity(0.24),
-                      borderRadius: BorderRadius.circular(2),
-                    )
-                  : null,
+              decoration:
+                  _focused
+                      ? BoxDecoration(
+                        color: colors.primary.withOpacity(0.24),
+                        borderRadius: BorderRadius.circular(2),
+                      )
+                      : null,
               child: Text(
                 widget.text,
-                style: widget.linkStyle ??
+                style:
+                    widget.linkStyle ??
                     (widget.style?.copyWith(color: colors.primary) ??
                             TextStyle(color: colors.primary))
                         .copyWith(
-                      decoration: _focused ? null : TextDecoration.underline,
-                      decorationColor: _focused ? null : colors.primary,
-                    ),
+                          decoration:
+                              _focused ? null : TextDecoration.underline,
+                          decorationColor: _focused ? null : colors.primary,
+                        ),
               ),
             ),
           ),
@@ -365,41 +392,47 @@ extension _NameHelper on XmlElement {
 }
 
 final _defaultSpanBuilders = <String, _HtmlTextSpanBuilder>{
-  'b': (_, node) => TextSpan(
+  'b':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
-  'strong': (_, node) => TextSpan(
+  'strong':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
-  'u': (_, node) => TextSpan(
+  'u':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(decoration: TextDecoration.underline),
       ),
-  's': (_, node) => TextSpan(
+  's':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(decoration: TextDecoration.lineThrough),
       ),
-  'i': (_, node) => TextSpan(
+  'i':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(fontStyle: FontStyle.italic),
       ),
-  'em': (_, node) => TextSpan(
+  'em':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
         style: TextStyle(fontStyle: FontStyle.italic),
       ),
-  'br': (_, node) => TextSpan(
-        text: '\n',
-        semanticsLabel: node.getAttribute('aria-label'),
-      ),
-  'span': (_, node) => TextSpan(
+  'br':
+      (_, node) =>
+          TextSpan(text: '\n', semanticsLabel: node.getAttribute('aria-label')),
+  'span':
+      (_, node) => TextSpan(
         text: node.text,
         semanticsLabel: node.getAttribute('aria-label'),
       ),
@@ -537,5 +570,5 @@ const _bannedHtmlTags = {
   'var',
   'video',
   'wbr',
-  'xmp'
+  'xmp',
 };

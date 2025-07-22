@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -231,6 +233,79 @@ void main() {
       expect(childTextSpan.recognizer, isNotNull);
 
       await tester.tapOnText(find.textRange.ofSubstring('This is a link'));
+      expect(linkUrl, equals('http://example.com'));
+    });
+
+    testWidgets('anchor tag is handled correctly with focusable links', (
+      tester,
+    ) async {
+      var linkUrl = '';
+      final widget = TaggedText(
+        content: '<a href="http://example.com">This is a link</a>',
+        onTapLink: (url) => linkUrl = url,
+        linkSemanticsLabel: 'Link semantics label',
+        focusableLinks: true,
+      );
+
+      await tester.pumpWidget(wrap(widget));
+
+      expect(find.text('This is a link'), findsOneWidget);
+      expect(
+        tester.widget(find.text('This is a link')),
+        isA<Text>().having(
+          (text) => text.style,
+          'style',
+          TextStyle(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+            decorationColor: Colors.blue,
+          ),
+        ),
+      );
+      expect(
+        tester.getSemantics(find.text('This is a link')),
+        containsSemantics(label: 'Link semantics label'),
+      );
+
+      await tester.tap(find.text('This is a link'));
+
+      expect(linkUrl, equals('http://example.com'));
+    });
+
+    testWidgets('anchor tag is handled correctly with aria-label', (
+      tester,
+    ) async {
+      var linkUrl = '';
+      final widget = TaggedText(
+        content:
+            '<a href="http://example.com" aria-label="ARIA semantics label">This is a link</a>',
+        onTapLink: (url) => linkUrl = url,
+        linkSemanticsLabel: 'Link semantics label',
+        focusableLinks: true,
+      );
+
+      await tester.pumpWidget(wrap(widget));
+
+      expect(find.text('This is a link'), findsOneWidget);
+      expect(
+        tester.widget(find.text('This is a link')),
+        isA<Text>().having(
+          (text) => text.style,
+          'style',
+          TextStyle(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+            decorationColor: Colors.blue,
+          ),
+        ),
+      );
+      expect(
+        tester.getSemantics(find.text('This is a link')),
+        containsSemantics(label: 'ARIA semantics label'),
+      );
+
+      await tester.tap(find.text('This is a link'));
+
       expect(linkUrl, equals('http://example.com'));
     });
 
@@ -539,6 +614,7 @@ void main() {
       expect(richText.textDirection, equals(TextDirection.rtl));
       expect(richText.softWrap, isFalse);
       expect(richText.overflow, equals(TextOverflow.ellipsis));
+
       expect(richText.textScaleFactor, equals(1.5));
       expect(richText.maxLines, equals(2));
     });
@@ -556,6 +632,7 @@ void main() {
       await tester.pumpWidget(wrap(widget));
 
       final richText = findRichTextWidget(tester);
+
       expect(richText.textScaleFactor, equals(1.0));
     });
 
@@ -581,6 +658,7 @@ void main() {
       );
 
       final richText = findRichTextWidget(tester);
+
       expect(richText.textScaleFactor, equals(expectedTextScaleFactor));
     });
 
@@ -636,10 +714,9 @@ void main() {
       testWidgets('linkSemanticsLabel is announced on link focus', (
         tester,
       ) async {
-        String urlLink = '';
         final widget = TaggedText(
           content: '<a href="http://example.com">This is a link</a>',
-          onTapLink: (url) => urlLink = url,
+          onTapLink: (url) {},
           linkSemanticsLabel: 'Link semantics label',
           focusableLinks: true,
         );

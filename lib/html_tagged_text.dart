@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ignore_for_file: deprecated_member_use
+
 import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -159,11 +161,12 @@ class TaggedText extends StatefulWidget {
       defaultTextSpanBuilders['a'] = (context, node) {
         final colorScheme = Theme.of(context).colorScheme;
         final href = node.getAttribute('href');
+        final semanticsLabel = node.getAttribute('aria-label');
         return focusableLinks
             ? WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: _FocusableLink(
-                label: linkSemanticsLabel,
+                label: semanticsLabel ?? linkSemanticsLabel,
                 text: node.text,
                 style: style ?? DefaultTextStyle.of(context).style,
                 linkStyle: linkStyle,
@@ -340,7 +343,6 @@ class _FocusableLinkState extends State<_FocusableLink> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Semantics(
-      label: widget.label,
       link: true,
       container: true,
       child: GestureDetector(
@@ -368,6 +370,7 @@ class _FocusableLinkState extends State<_FocusableLink> {
                       : null,
               child: Text(
                 widget.text,
+                semanticsLabel: widget.label,
                 style:
                     widget.linkStyle ??
                     (widget.style?.copyWith(color: colors.primary) ??
